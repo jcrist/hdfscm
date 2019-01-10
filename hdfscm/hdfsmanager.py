@@ -85,7 +85,7 @@ class HdfsContentsManager(ContentsManager):
     def infer_type(self, path):
         if path.endswith(".ipynb"):
             return "notebook"
-        elif self.dir_exists(path):
+        elif self.fs.isdir(path):
             return "directory"
         else:
             return "file"
