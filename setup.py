@@ -1,10 +1,12 @@
+import versioneer
 from setuptools import setup
 
 with open('README.rst') as f:
     long_description = f.read()
 
 setup(name='jupyter-hdfscm',
-      version='0.1.0',
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       license='BSD',
       maintainer='Jim Crist',
       maintainer_email='jiminy.crist@gmail.com',
