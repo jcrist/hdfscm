@@ -1,0 +1,1 @@
+from .hdfsmanager import HdfsContentsManager
