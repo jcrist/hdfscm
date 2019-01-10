@@ -1,26 +1,17 @@
 import mimetypes
 from base64 import encodebytes, decodebytes
-from contextlib import contextmanager
 from datetime import datetime
 from getpass import getuser
-from posixpath import normpath
+from urllib.parse import urlsplit
 
 import nbformat
-from notebook.utils import to_os_path
 from notebook.services.contents.manager import ContentsManager
 from pyarrow import hdfs, ArrowIOError
-from traitlets import Unicode, Integer, default
+from traitlets import Unicode, Integer, Bool, default
 from tornado.web import HTTPError
 
-
-@contextmanager
-def perm_to_403(self, path):
-    try:
-        yield
-    except (OSError, IOError):
-        # For now we can't detect the errno from pyarrow (easily),
-        # just treat all errors as permission errors
-        raise HTTPError(403, u'Permission denied: %s' % path)
+from .checkpoints import HdfsCheckpoints
+from .utils import to_fs_path, to_api_path, perm_to_403
 
 
 class HdfsContentsManager(ContentsManager):
@@ -43,44 +34,56 @@ class HdfsContentsManager(ContentsManager):
         )
 
     root_dir_template = Unicode(
+        default_value="/user/{username}/notebooks",
+        config=True,
         help="""
         A template string to populate ``root_dir`` from.
 
         Receive the following format parameters:
 
         - username
-        """,
-        default="/user/{username}/notebooks",
-        config=True)
+        """
+    )
+
+    create_root_dir_on_startup = Bool(
+        default_value=True,
+        config=True,
+        help="Create ``root_dir`` on startup if it doesn't already exist"
+    )
 
     hdfs_host = Unicode(
+        default_value="default",
+        config=True,
         help="""
         The hostname of the HDFS namenode.
 
         By default this will be inferred from the HDFS configuration files.
-        """,
-        default="default",
-        config=True
+        """
     )
 
     hdfs_port = Integer(
+        default_value=0,
+        config=True,
         help="""
         The port for the HDFS namenode.
 
         By default this will be inferred from the HDFS configuration files.
-        """,
-        default=0,
-        config=True
+        """
     )
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(HdfsContentsManager, self).__init__(*args, **kwargs)
         self.fs = hdfs.connect(host=self.hdfs_host, port=self.hdfs_port)
+        if self.create_root_dir_on_startup:
+            self.fs.mkdir(self.root_dir)
+
+    def _checkpoints_class_default(self):
+        return HdfsCheckpoints
 
     def info_string(self):
         return "Serving notebooks from HDFS directory: %s" % self.root_dir
 
-    def infer_content_type(self, path):
+    def infer_type(self, path):
         if path.endswith(".ipynb"):
             return "notebook"
         elif self.dir_exists(path):
@@ -88,78 +91,85 @@ class HdfsContentsManager(ContentsManager):
         else:
             return "file"
 
-    def _get_hdfs_path(self, path):
-        hdfs_path = normpath(to_os_path(path, self.root_dir))
-        if not hdfs_path.startswith(self.root_dir):
-            raise HTTPError(404, "%s is outside root directory" % path)
-        return hdfs_path
-
     def is_hidden(self, path):
         return False
 
     def file_exists(self, path):
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
         return self.fs.isfile(hdfs_path)
 
     def dir_exists(self, path):
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
         return self.fs.isdir(hdfs_path)
 
     def exists(self, path):
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
         return self.fs.exists(hdfs_path)
 
-    def _base_model(self, path, hdfs_path):
-        if hdfs_path is None:
-            hdfs_path = self._get_hdfs_path(path)
+    def _info_and_check_kind(self, path, hdfs_path, kind):
         try:
             info = self.fs.info(hdfs_path)
         except ArrowIOError:
-            raise HTTPError(404, "Failed to access %s" % path)
+            info = {}
 
-        size = info['size']
-        timestamp = datetime.fromtimestamp(info['last_modified_time'])
-        model = {'name': path.rsplit('/', 1)[-1],
+        if info.get('kind') != kind:
+            raise HTTPError(404, "%s does not exist: %s"
+                            % (kind.capitalize(), path))
+        return info
+
+    def _model_from_info(self, info, type=None):
+        if 'name' in info:
+            hdfs_path = info['name']
+            timestamp = info['last_modified_time']
+        else:
+            # info from `ls` is different for some reason
+            hdfs_path = urlsplit(info['path']).path
+            timestamp = info['last_modified']
+
+        path = to_api_path(hdfs_path, self.root_dir)
+        name = path.rsplit('/', 1)[-1]
+
+        if type is None:
+            if info['kind'] == 'directory':
+                type = 'directory'
+            elif path.endswith('.ipynb'):
+                type = 'notebook'
+            else:
+                type = 'file'
+
+        mimetype = mimetypes.guess_type(path)[0] if type == 'file' else None
+        size = info['size'] if type != 'directory' else None
+        timestamp = datetime.fromtimestamp(timestamp)
+        model = {'name': name,
                  'path': path,
                  'last_modified': timestamp,
                  'created': timestamp,
+                 'type': type,
+                 'size': size,
+                 'mimetype': mimetype,
                  'content': None,
                  'format': None,
-                 'mimetype': None,
-                 'writable': True,
-                 'size': size}
+                 'writable': True}
 
         return model
 
-    def _dir_model(self, path, content=True):
-        hdfs_path = self._get_hdfs_path(path)
-
-        if not self.fs.isdir(hdfs_path):
-            raise HTTPError(404, "Directory does not exist: %s" % path)
-
-        model = self._base_model(path, hdfs_path)
-        model['type'] = 'directory'
-        model['size'] = None
+    def _dir_model(self, path, hdfs_path, content):
+        info = self._info_and_check_kind(path, hdfs_path, 'directory')
+        model = self._model_from_info(info, 'directory')
         if content:
             model['content'] = [self._model_from_info(info)
-                                for info in self.fs.listdir(hdfs_path, True)]
+                                for info in self.fs.ls(hdfs_path, True)]
             model['format'] = 'json'
         return model
 
-    def _file_model(self, path, content=True, format=None):
-        hdfs_path = self._get_hdfs_path(path)
-
-        if not self.fs.isfile(hdfs_path):
-            raise HTTPError(404, "File does not exist: %s" % path)
-
-        model = self._base_model(path, hdfs_path)
-        model['type'] = 'file'
-        mimetype = mimetypes.guess_type(hdfs_path)[0]
+    def _file_model(self, path, hdfs_path, content, format):
+        info = self._info_and_check_kind(path, hdfs_path, 'file')
+        model = self._model_from_info(info, 'file')
 
         if content:
             content, format = self._read_file(path, hdfs_path, format)
-            if mimetype is None:
-                mimetype = {
+            if model['mimetype'] is None:
+                model['mimetype'] = {
                     'text': 'text/plain',
                     'base64': 'application/octet-stream'
                 }[format]
@@ -169,18 +179,11 @@ class HdfsContentsManager(ContentsManager):
                 format=format,
             )
 
-        model['mimetype'] = mimetype
-
         return model
 
-    def _notebook_model(self, path, content=True):
-        hdfs_path = self._get_hdfs_path(path)
-
-        if not self.fs.isfile(hdfs_path):
-            raise HTTPError(404, "File does not exist: %s" % path)
-
-        model = self._base_model(path, hdfs_path)
-        model['type'] = 'notebook'
+    def _notebook_model(self, path, hdfs_path, content=True):
+        info = self._info_and_check_kind(path, hdfs_path, 'file')
+        model = self._model_from_info(info, 'notebook')
 
         if content:
             contents = self._read_notebook(path, hdfs_path)
@@ -224,17 +227,17 @@ class HdfsContentsManager(ContentsManager):
         if not self.exists(path):
             raise HTTPError(404, 'No such file or directory: %s' % path)
 
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
 
         if type is None:
-            type = self.infer_content_type(hdfs_path)
+            type = self.infer_type(hdfs_path)
 
         if type == 'directory':
-            model = self._dir_model(path, content=content)
+            model = self._dir_model(path, hdfs_path, content)
         elif type == 'notebook':
-            model = self._notebook_model(path, content=content)
+            model = self._notebook_model(path, hdfs_path, content)
         else:
-            model = self._file_model(path, content=content, format=format)
+            model = self._file_model(path, hdfs_path, content, format)
         return model
 
     def _save_directory(self, path, hdfs_path, model):
@@ -268,9 +271,12 @@ class HdfsContentsManager(ContentsManager):
     def _save_notebook(self, path, hdfs_path, model):
         nb = nbformat.from_dict(model['content'])
         self.check_and_sign(nb, path)
+        content = nbformat.writes(nb, version=nbformat.NO_CONVERT)
+        bcontent = content.encode('utf8')
         with self.fs.open(hdfs_path, 'wb') as f:
-            nbformat.write(nb, f, version=nbformat.NO_CONVERT)
+            f.write(bcontent)
         self.validate_notebook_model(model)
+        return model.get('message')
 
     def save(self, model, path):
         if 'type' not in model:
@@ -281,10 +287,11 @@ class HdfsContentsManager(ContentsManager):
         if 'content' not in model and typ != 'directory':
             raise HTTPError(400, 'No file content provided')
 
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
 
+        message = None
         if typ == 'notebook':
-            self._save_notebook(path, hdfs_path, model)
+            message = self._save_notebook(path, hdfs_path, model)
         elif typ == 'file':
             self._save_file(path, hdfs_path, model)
         elif typ == 'directory':
@@ -292,17 +299,29 @@ class HdfsContentsManager(ContentsManager):
         else:
             raise HTTPError(400, "Unhandled contents type: %s" % typ)
 
+        model = self.get(path, type=model["type"], content=False)
+        if message is not None:
+            model['message'] = message
+
         return model
 
+    def _is_dir_empty(self, hdfs_path):
+        files = self.fs.ls(hdfs_path)
+        if not files:
+            return True
+        cp_dir = getattr(self.checkpoints, 'checkpoint_dir', None)
+        files = {f.rsplit('/', 1)[-1] for f in files} - {cp_dir}
+        return bool(files)
+
     def delete_file(self, path):
-        hdfs_path = self._get_hdfs_path(path)
+        hdfs_path = to_fs_path(path, self.root_dir)
 
         if not self.fs.exists(hdfs_path):
             raise HTTPError(
                 404, 'File or directory does not exist: %s' % path
             )
 
-        if self.fs.isdir(hdfs_path) and self.fs.listdir(hdfs_path):
+        if self.fs.isdir(hdfs_path) and not self._is_dir_empty(hdfs_path):
             raise HTTPError(400, 'Directory %s not empty' % path)
 
         with perm_to_403(path):
@@ -312,15 +331,15 @@ class HdfsContentsManager(ContentsManager):
         if old_path == new_path:
             return
 
-        old_hdfs_path = self._get_hdfs_path(old_path)
-        new_hdfs_path = self._get_hdfs_path(new_path)
+        old_hdfs_path = to_fs_path(old_path, self.root_dir)
+        new_hdfs_path = to_fs_path(new_path, self.root_dir)
 
         if self.fs.exists(new_hdfs_path):
             raise HTTPError(409, 'File already exists: %s' % new_path)
 
         # Move the file
         try:
-            with perm_to_403():
+            with perm_to_403(old_path):
                 self.fs.rename(old_hdfs_path, new_hdfs_path)
         except Exception as e:
             raise HTTPError(
