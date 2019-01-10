@@ -1,0 +1,6 @@
+[run]
+omit =
+    hdfscm/tests/*.py
+    hdfscm/_version.py
+source = 
+    hdfscm
