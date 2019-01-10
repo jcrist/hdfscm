@@ -15,8 +15,7 @@ from .utils import to_fs_path, to_api_path, perm_to_403
 
 
 class HdfsContentsManager(ContentsManager):
-    """ContentsManager that persists to HDFS rather than the local filesystem.
-    """
+    """A ContentsManager implementation that persists to HDFS."""
 
     root_dir = Unicode(
         help="""

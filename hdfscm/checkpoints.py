@@ -9,6 +9,10 @@ from pyarrow import hdfs
 from .utils import to_fs_path, perm_to_403
 
 
+__all__ = ('HdfsCheckpoints', 'LocalFileCheckpoints', 'NoOpCheckpoints')
+
+
+# Currently only one checkpoint is supported
 CHECKPOINT_ID = "checkpoint"
 
 
@@ -83,6 +87,8 @@ class HdfsCheckpointsMixin(HasTraits):
 
 
 class HdfsCheckpoints(HdfsCheckpointsMixin, Checkpoints):
+    """A Checkpoints implementation that persists to HDFS"""
+
     checkpoint_dir = Unicode(
         '.ipynb_checkpoints',
         config=True,
@@ -145,23 +151,19 @@ class HdfsCheckpoints(HdfsCheckpointsMixin, Checkpoints):
 
 
 class LocalFileCheckpoints(HdfsCheckpointsMixin, Checkpoints):
+    """A Checkpoints implementation that persists to the local filesystem."""
     checkpoint_root_dir = Unicode(
-        '.local_ipynb_checkpoints',
         config=True,
         help="""The root directory in which to keep file checkpoints
 
-        This can either be an absolute path, or relative path to the current
+        By default, it is ``.local_ipynb_checkpoints``, relative to the current
         working directory.
-
-        By default, it is .local_ipynb_checkpoints.
         """
     )
 
-    checkpoint_root_dir_abs = Unicode()
-
-    @default('checkpoint_root_dir_abs')
-    def _default_checkpoint_root_dir_abs(self):
-        return os.path.abspath(self.checkpoint_root_dir)
+    @default('checkpoint_root_dir')
+    def _default_checkpoint_root_dir(self):
+        return os.path.join(os.getcwd(), '.local_ipynb_checkpoints')
 
     def _checkpoint_model(self, checkpoint_id, os_path):
         stats = os.stat(os_path)
@@ -170,16 +172,15 @@ class LocalFileCheckpoints(HdfsCheckpointsMixin, Checkpoints):
 
     def _checkpoint_path(self, checkpoint_id, path):
         path = path.strip('/')
-        parent, name = ('/' + path).rsplit('/', 1)
-        parent = parent.strip('/')
-        basename, ext = posixpath.splitext(name)
+        directory, filename = posixpath.split(path)
+        name, ext = posixpath.splitext(filename)
         filename = "{name}-{checkpoint_id}{ext}".format(
-            name=basename,
+            name=name,
             checkpoint_id=checkpoint_id,
             ext=ext,
         )
 
-        cp_dir = to_fs_path(parent, self.checkpoint_root_dir_abs)
+        cp_dir = to_fs_path(directory, self.checkpoint_root_dir)
 
         # Create the directory if it doesn't exist
         with perm_to_403(cp_dir):
