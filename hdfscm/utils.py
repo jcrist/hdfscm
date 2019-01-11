@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 
+from pyarrow import ArrowIOError
 from tornado.web import HTTPError
 
 
@@ -25,7 +26,8 @@ def to_fs_path(path, root):
 def perm_to_403(path):
     try:
         yield
-    except (OSError, IOError):
-        # For now we can't detect the errno from pyarrow (easily),
-        # just treat all errors as permission errors
-        raise HTTPError(403, 'Permission denied: %s' % path)
+    except ArrowIOError as exc:
+        # For now we can't access the errno attribute of the error directly,
+        # detect it from the string instead.
+        if 'errno: 13 (Permission denied)' in str(exc):
+            raise HTTPError(403, 'Permission denied: %s' % path)
