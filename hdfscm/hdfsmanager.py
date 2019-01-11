@@ -72,8 +72,12 @@ class HdfsContentsManager(ContentsManager):
 
     def __init__(self, *args, **kwargs):
         super(HdfsContentsManager, self).__init__(*args, **kwargs)
+        self.log.debug("Connecting to HDFS at %s:%d",
+                       self.hdfs_host, self.hdfs_port)
         self.fs = hdfs.connect(host=self.hdfs_host, port=self.hdfs_port)
         if self.create_root_dir_on_startup:
+            self.log.debug("Creating root notebooks directory: %s",
+                           self.root_dir)
             self.fs.mkdir(self.root_dir)
 
     def _checkpoints_class_default(self):
@@ -245,6 +249,7 @@ class HdfsContentsManager(ContentsManager):
 
     def _save_directory(self, path, hdfs_path, model):
         if not self.fs.exists(hdfs_path):
+            self.log.debug("Creating directory at %s", hdfs_path)
             with perm_to_403(path):
                 self.fs.mkdir(hdfs_path)
         elif not self.fs.isdir(hdfs_path):
@@ -268,6 +273,7 @@ class HdfsContentsManager(ContentsManager):
         except Exception as e:
             raise HTTPError(400, 'Encoding error saving %s: %s' % (path, e))
 
+        self.log.debug("Saving file to %s", hdfs_path)
         with perm_to_403(path):
             with self.fs.open(hdfs_path, 'wb') as f:
                 f.write(bcontent)
@@ -277,6 +283,7 @@ class HdfsContentsManager(ContentsManager):
         self.check_and_sign(nb, path)
         content = nbformat.writes(nb, version=nbformat.NO_CONVERT)
         bcontent = content.encode('utf8')
+        self.log.debug("Saving notebook to %s", hdfs_path)
         with perm_to_403(path):
             with self.fs.open(hdfs_path, 'wb') as f:
                 f.write(bcontent)
@@ -327,11 +334,16 @@ class HdfsContentsManager(ContentsManager):
                 404, 'File or directory does not exist: %s' % path
             )
 
-        if self.fs.isdir(hdfs_path) and not self._is_dir_empty(path, hdfs_path):
-            raise HTTPError(400, 'Directory %s not empty' % path)
-
-        with perm_to_403(path):
-            self.fs.delete(hdfs_path, recursive=True)
+        if self.fs.isdir(hdfs_path):
+            if not self._is_dir_empty(path, hdfs_path):
+                raise HTTPError(400, 'Directory %s not empty' % path)
+            self.log.debug("Deleting directory at %s", hdfs_path)
+            with perm_to_403(path):
+                self.fs.delete(hdfs_path, recursive=True)
+        else:
+            self.log.debug("Deleting file at %s", hdfs_path)
+            with perm_to_403(path):
+                self.fs.delete(hdfs_path)
 
     def rename_file(self, old_path, new_path):
         if old_path == new_path:
@@ -344,6 +356,7 @@ class HdfsContentsManager(ContentsManager):
             raise HTTPError(409, 'File already exists: %s' % new_path)
 
         # Move the file
+        self.log.debug("Renaming %s -> %s", old_hdfs_path, new_hdfs_path)
         try:
             with perm_to_403(old_path):
                 self.fs.rename(old_hdfs_path, new_hdfs_path)

@@ -63,15 +63,17 @@ class HdfsCheckpoints(Checkpoints):
         return self.parent.fs
 
     def create_checkpoint(self, contents_mgr, path):
-        src_path = to_fs_path(path, contents_mgr.root_dir)
-        dest_path = self._checkpoint_path(CHECKPOINT_ID, path)
-        self._copy(src_path, dest_path)
-        return self._checkpoint_model(CHECKPOINT_ID, dest_path)
+        orig_path = to_fs_path(path, contents_mgr.root_dir)
+        cp_path = self._checkpoint_path(CHECKPOINT_ID, path)
+        self.log.debug("Creating checkpoint %s", cp_path)
+        self._copy(orig_path, cp_path)
+        return self._checkpoint_model(CHECKPOINT_ID, cp_path)
 
     def restore_checkpoint(self, contents_mgr, checkpoint_id, path):
-        src_path = self._checkpoint_path(checkpoint_id, path)
-        dest_path = to_fs_path(path, contents_mgr.root_dir)
-        self._copy(src_path, dest_path)
+        cp_path = self._checkpoint_path(checkpoint_id, path)
+        orig_path = to_fs_path(path, contents_mgr.root_dir)
+        self.log.debug("Restoring checkpoint %s", cp_path)
+        self._copy(cp_path, orig_path)
 
     def rename_checkpoint(self, checkpoint_id, old_path, new_path):
         old_cp_path = self._checkpoint_path(checkpoint_id, old_path)
