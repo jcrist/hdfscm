@@ -107,7 +107,8 @@ class HdfsContentsManager(ContentsManager):
 
     def _info_and_check_kind(self, path, hdfs_path, kind):
         try:
-            info = self.fs.info(hdfs_path)
+            with perm_to_403(path):
+                info = self.fs.info(hdfs_path)
         except ArrowIOError:
             info = {}
 
@@ -156,8 +157,9 @@ class HdfsContentsManager(ContentsManager):
         info = self._info_and_check_kind(path, hdfs_path, 'directory')
         model = self._model_from_info(info, 'directory')
         if content:
-            model['content'] = [self._model_from_info(info)
-                                for info in self.fs.ls(hdfs_path, True)]
+            with perm_to_403(path):
+                records = self.fs.ls(hdfs_path, True)
+            model['content'] = [self._model_from_info(i) for i in records]
             model['format'] = 'json'
         return model
 
@@ -197,8 +199,9 @@ class HdfsContentsManager(ContentsManager):
         if not self.fs.isfile(hdfs_path):
             raise HTTPError(400, "Cannot read non-file %s" % path)
 
-        with self.fs.open(hdfs_path, 'rb') as f:
-            bcontent = f.read()
+        with perm_to_403(path):
+            with self.fs.open(hdfs_path, 'rb') as f:
+                bcontent = f.read()
 
         if format is None:
             try:
@@ -215,8 +218,9 @@ class HdfsContentsManager(ContentsManager):
             return encodebytes(bcontent).decode('ascii'), 'base64'
 
     def _read_notebook(self, path, hdfs_path):
-        with self.fs.open(hdfs_path, 'rb') as f:
-            content = f.read()
+        with perm_to_403(path):
+            with self.fs.open(hdfs_path, 'rb') as f:
+                content = f.read()
         try:
             return nbformat.reads(content.decode('utf8'), as_version=4)
         except Exception as e:
@@ -264,16 +268,18 @@ class HdfsContentsManager(ContentsManager):
         except Exception as e:
             raise HTTPError(400, 'Encoding error saving %s: %s' % (path, e))
 
-        with self.fs.open(hdfs_path, 'wb') as f:
-            f.write(bcontent)
+        with perm_to_403(path):
+            with self.fs.open(hdfs_path, 'wb') as f:
+                f.write(bcontent)
 
     def _save_notebook(self, path, hdfs_path, model):
         nb = nbformat.from_dict(model['content'])
         self.check_and_sign(nb, path)
         content = nbformat.writes(nb, version=nbformat.NO_CONVERT)
         bcontent = content.encode('utf8')
-        with self.fs.open(hdfs_path, 'wb') as f:
-            f.write(bcontent)
+        with perm_to_403(path):
+            with self.fs.open(hdfs_path, 'wb') as f:
+                f.write(bcontent)
         self.validate_notebook_model(model)
         return model.get('message')
 
@@ -304,8 +310,9 @@ class HdfsContentsManager(ContentsManager):
 
         return model
 
-    def _is_dir_empty(self, hdfs_path):
-        files = self.fs.ls(hdfs_path)
+    def _is_dir_empty(self, path, hdfs_path):
+        with perm_to_403(path):
+            files = self.fs.ls(hdfs_path)
         if not files:
             return True
         cp_dir = getattr(self.checkpoints, 'checkpoint_dir', None)
@@ -320,7 +327,7 @@ class HdfsContentsManager(ContentsManager):
                 404, 'File or directory does not exist: %s' % path
             )
 
-        if self.fs.isdir(hdfs_path) and not self._is_dir_empty(hdfs_path):
+        if self.fs.isdir(hdfs_path) and not self._is_dir_empty(path, hdfs_path):
             raise HTTPError(400, 'Directory %s not empty' % path)
 
         with perm_to_403(path):
@@ -340,6 +347,8 @@ class HdfsContentsManager(ContentsManager):
         try:
             with perm_to_403(old_path):
                 self.fs.rename(old_hdfs_path, new_hdfs_path)
+        except HTTPError:
+            raise
         except Exception as e:
             raise HTTPError(
                 500, 'Unknown error renaming file: %s\n%s' % (old_path, e)

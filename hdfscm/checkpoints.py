@@ -100,7 +100,8 @@ class HdfsCheckpoints(Checkpoints):
             return [self._checkpoint_model(CHECKPOINT_ID, cp_path)]
 
     def _checkpoint_model(self, checkpoint_id, hdfs_path):
-        info = self.fs.info(hdfs_path)
+        with perm_to_403(hdfs_path):
+            info = self.fs.info(hdfs_path)
         last_modified = datetime.fromtimestamp(info['last_modified'])
         return {'id': checkpoint_id,
                 'last_modified': last_modified}
@@ -124,9 +125,11 @@ class HdfsCheckpoints(Checkpoints):
     def _copy(self, src_path, dest_path):
         # TODO: pyarrow.hdfs currently doesn't implement copy, so this is
         # less efficient than it should be.
-        with self.fs.open(src_path, 'rb') as source:
-            with self.fs.open(dest_path, 'wb') as dest:
-                dest.upload(source)
+        with perm_to_403(src_path):
+            with self.fs.open(src_path, 'rb') as source:
+                with perm_to_403(dest_path):
+                    with self.fs.open(dest_path, 'wb') as dest:
+                        dest.upload(source)
 
     def _rename(self, old, new):
         with perm_to_403(old):
