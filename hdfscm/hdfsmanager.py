@@ -11,7 +11,7 @@ from traitlets import Unicode, Integer, Bool, default
 from tornado.web import HTTPError
 
 from .checkpoints import HdfsCheckpoints
-from .utils import to_fs_path, to_api_path, perm_to_403
+from .utils import to_fs_path, to_api_path, is_hidden, perm_to_403
 
 
 class HdfsContentsManager(ContentsManager):
@@ -71,14 +71,16 @@ class HdfsContentsManager(ContentsManager):
     )
 
     def __init__(self, *args, **kwargs):
-        super(HdfsContentsManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.log.debug("Connecting to HDFS at %s:%d",
                        self.hdfs_host, self.hdfs_port)
         self.fs = hdfs.connect(host=self.hdfs_host, port=self.hdfs_port)
         if self.create_root_dir_on_startup:
-            self.log.debug("Creating root notebooks directory: %s",
-                           self.root_dir)
-            self.fs.mkdir(self.root_dir)
+            self.ensure_root_directory()
+
+    def ensure_root_directory(self):
+        self.log.debug("Creating root notebooks directory: %s", self.root_dir)
+        self.fs.mkdir(self.root_dir)
 
     def _checkpoints_class_default(self):
         return HdfsCheckpoints
@@ -95,7 +97,8 @@ class HdfsContentsManager(ContentsManager):
             return "file"
 
     def is_hidden(self, path):
-        return False
+        hdfs_path = to_fs_path(path, self.root_dir)
+        return is_hidden(hdfs_path, self.root_dir)
 
     def file_exists(self, path):
         hdfs_path = to_fs_path(path, self.root_dir)
@@ -114,11 +117,11 @@ class HdfsContentsManager(ContentsManager):
             with perm_to_403(path):
                 info = self.fs.info(hdfs_path)
         except ArrowIOError:
-            info = {}
-
-        if info.get('kind') != kind:
             raise HTTPError(404, "%s does not exist: %s"
                             % (kind.capitalize(), path))
+
+        if info['kind'] != kind:
+            raise HTTPError(400, "%s is not a %s" % (path, kind))
         return info
 
     def _model_from_info(self, info, type=None):
@@ -163,7 +166,12 @@ class HdfsContentsManager(ContentsManager):
         if content:
             with perm_to_403(path):
                 records = self.fs.ls(hdfs_path, True)
-            model['content'] = [self._model_from_info(i) for i in records]
+            contents = [self._model_from_info(i) for i in records]
+            # Filter out hidden files/directories
+            # These are rare, so do this after generating contents, not before
+            model['content'] = [c for c in contents
+                                if self.should_list(c['name']) and not
+                                c['name'].startswith('.')]
             model['format'] = 'json'
         return model
 
@@ -231,10 +239,13 @@ class HdfsContentsManager(ContentsManager):
             raise HTTPError(400, "Unreadable Notebook: %s\n%r" % (path, e))
 
     def get(self, path, content=True, type=None, format=None):
-        if not self.exists(path):
-            raise HTTPError(404, 'No such file or directory: %s' % path)
-
         hdfs_path = to_fs_path(path, self.root_dir)
+
+        if not self.fs.exists(hdfs_path):
+            raise HTTPError(404, 'No such file or directory: %s' % path)
+        elif not self.allow_hidden and is_hidden(hdfs_path, self.root_dir):
+            self.log.debug("Refusing to serve hidden directory %r", hdfs_path)
+            raise HTTPError(404, 'No such file or directory: %s' % path)
 
         if type is None:
             type = self.infer_type(hdfs_path)
@@ -248,6 +259,9 @@ class HdfsContentsManager(ContentsManager):
         return model
 
     def _save_directory(self, path, hdfs_path, model):
+        if not self.allow_hidden and is_hidden(hdfs_path, self.root_dir):
+            raise HTTPError(400, 'Cannot create hidden directory %r' % path)
+
         if not self.fs.exists(hdfs_path):
             self.log.debug("Creating directory at %s", hdfs_path)
             with perm_to_403(path):
@@ -324,7 +338,7 @@ class HdfsContentsManager(ContentsManager):
             return True
         cp_dir = getattr(self.checkpoints, 'checkpoint_dir', None)
         files = {f.rsplit('/', 1)[-1] for f in files} - {cp_dir}
-        return bool(files)
+        return not files
 
     def delete_file(self, path):
         hdfs_path = to_fs_path(path, self.root_dir)

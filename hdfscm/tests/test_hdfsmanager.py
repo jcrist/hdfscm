@@ -4,16 +4,17 @@ from notebook.services.contents.tests.test_manager import (
 
 from hdfscm import HdfsContentsManager
 
+from .conftest import random_root_dir
+
 
 class HdfsContentsManagerTestCase(TestContentsManager):
 
     def setUp(self):
-        self.contents_manager = HdfsContentsManager()
-        self.tearDown()
+        self.root_dir = random_root_dir()
+        self.contents_manager = HdfsContentsManager(root_dir=self.root_dir)
 
     def tearDown(self):
-        for item in self.contents_manager.fs.ls(self.contents_manager.root_dir):
-            self.contents_manager.fs.delete(item, recursive=True)
+        self.contents_manager.fs.delete(self.root_dir, recursive=True)
 
     def make_dir(self, api_path):
         self.contents_manager.new(

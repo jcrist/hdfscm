@@ -22,6 +22,11 @@ def to_fs_path(path, root):
     return fs_path
 
 
+def is_hidden(fs_path, root):
+    path = to_api_path(fs_path, root)
+    return any(part.startswith('.') for part in path.split("/"))
+
+
 @contextmanager
 def perm_to_403(path):
     try:
