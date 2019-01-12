@@ -1,0 +1,55 @@
+language: python
+sudo: required
+dist: trusty
+os: linux
+python:
+  - "3.6"
+
+services:
+  - docker
+
+git:
+  depth: false  # Ensure latest tag is pulled
+
+branches:
+  only:
+    - master
+
+env:
+  global:
+    - secure: "WbsMBXaGlH0uNI1sEqzSA9dk650ZZff0FVn7eUFEKwVmrHWVpBga4U9NS+iMmBtZHMIpXb8S+Fk44Dsvixa4YeNm82f4hxfupFhLbhXxQMdymoQ+L45PfGShVx3UIo62Bs1ansbCM5eehHB0eWpgwvCU0WoeHAWvbY2tUACg4BdW4IlpU+Sff1iopM61jocjWz6c2uG4O3HnuSn4qCi9DqQfJ/GNDy7Rgn7RjJCSEbPmVlQQElBIb5xDXlnqhurgoGIcdTiowQTG97nSbSLvQea9Oiq65pzRXE6o/TkNQHnVsXj44O2xHqFjEmI8jWksIwELLsUjUQhVzDR4d+ymRnp3Cria8npHXcEZeJSGoIfRBGdRMfrfAV962pm+I2u3qis4tvsPFRUEdM2qBKTyF2/3ypmxprAd6aM/LCnL8htxIcn/TGcX2Q7pQ0hYBTutIuY40bGf0aV6zCGvIBxddqKGKwGrvqVTVvLdXfy/LepgK69OnLrCPp/SYYTcfsRZCGEeXlV9IYPRtG1KH8076MXVdBIDKyKCwHKNbZQXl31xUwlijbfkDqapmjZxfrcn5dMjc4tLNOfI2hs/bJBqE3I42y/agnoFlK9+hNeFL1phsCsZfJnvuKSRnU0FiMUTWV5TxHK98j59WrD1A0AF87MhhHaLyjVTuFC3MrctTKY="
+
+jobs:
+  fast_finish: true
+
+  include:
+    - if: commit_message !~ skip-tests
+    - sudo: false
+      env:
+        - DOCS=true
+
+before_install:
+  - |
+    if [[ "$DOCS" != "true" ]]; then
+        ./continuous_integration/before_install.sh
+    fi
+
+install:
+  - |
+    if [[ "$DOCS" != "true" ]]; then
+        htcluster exec -- ./hdfscm/continuous_integration/install.sh
+    else
+        pip install notebook pyarrow sphinx doctr
+        pip install -e .
+    fi
+
+script:
+  - |
+    if [[ "$DOCS" != "true" ]]; then
+        htcluster exec -- ./hdfscm/continuous_integration/runtests.sh
+    else
+        ./continuous_integration/build_docs.sh
+    fi
+
+notifications:
+  email: false
