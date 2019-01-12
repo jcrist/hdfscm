@@ -10,7 +10,7 @@ setup(name='jupyter-hdfscm',
       license='BSD',
       maintainer='Jim Crist',
       maintainer_email='jiminy.crist@gmail.com',
-      description='Jupyter ContentsManager for HDFS',
+      description='A Jupyter ContentsManager for HDFS',
       long_description=long_description,
       url='http://github.com/jcrist/hdfscm',
       project_urls={
@@ -23,4 +23,6 @@ setup(name='jupyter-hdfscm',
                    'License :: OSI Approved :: BSD License',
                    'Programming Language :: Python',
                    'Programming Language :: Python :: 3'],
-      packages=['hdfscm'])
+      packages=['hdfscm'],
+      python_requires='>=3.5',
+      install_requires=['notebook>=4.0', 'pyarrow>=0.9.0'])
