@@ -76,9 +76,6 @@ class HdfsContentsAPITest(APITest):
         return self.fs.isdir(self.get_hdfs_path(api_path))
 
     # Test overrides.
-    def test_mkdir_hidden_400(self):
-        pass
-
     def test_checkpoints_separate_root(self):
         pass
 

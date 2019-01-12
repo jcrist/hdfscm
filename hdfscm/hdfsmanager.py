@@ -1,6 +1,5 @@
 import mimetypes
 from base64 import encodebytes, decodebytes
-from datetime import datetime
 from getpass import getuser
 from urllib.parse import urlsplit
 
@@ -11,7 +10,8 @@ from traitlets import Unicode, Integer, Bool, default
 from tornado.web import HTTPError
 
 from .checkpoints import HdfsCheckpoints
-from .utils import to_fs_path, to_api_path, is_hidden, perm_to_403
+from .utils import (to_fs_path, to_api_path, is_hidden, perm_to_403,
+                    utcfromtimestamp)
 
 
 class HdfsContentsManager(ContentsManager):
@@ -146,7 +146,7 @@ class HdfsContentsManager(ContentsManager):
 
         mimetype = mimetypes.guess_type(path)[0] if type == 'file' else None
         size = info['size'] if type != 'directory' else None
-        timestamp = datetime.fromtimestamp(timestamp)
+        timestamp = utcfromtimestamp(timestamp)
         model = {'name': name,
                  'path': path,
                  'last_modified': timestamp,

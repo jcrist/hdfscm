@@ -1,7 +1,31 @@
 from contextlib import contextmanager
+from datetime import datetime, tzinfo, timedelta
 
 from pyarrow import ArrowIOError
 from tornado.web import HTTPError
+
+
+_ZERO = timedelta(0)
+
+
+class _utc_tzinfo(tzinfo):
+    def utcoffset(self, d):
+        return _ZERO
+
+    dst = utcoffset
+
+
+_UTC = _utc_tzinfo()
+
+
+def utcfromtimestamp(t):
+    out = datetime.utcfromtimestamp(t)
+    return out.replace(tzinfo=_UTC)
+
+
+def utcnow():
+    out = datetime.now()
+    return out.replace(tzinfo=_UTC)
 
 
 def to_api_path(fs_path, root):

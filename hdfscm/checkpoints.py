@@ -1,11 +1,10 @@
 import posixpath
-from datetime import datetime
 from notebook.services.contents.checkpoints import Checkpoints
 from tornado.web import HTTPError
 from traitlets import Unicode, Instance, default
 from pyarrow import hdfs
 
-from .utils import to_fs_path, perm_to_403
+from .utils import to_fs_path, perm_to_403, utcfromtimestamp, utcnow
 
 
 __all__ = ('HdfsCheckpoints', 'NoOpCheckpoints')
@@ -21,7 +20,7 @@ class NoOpCheckpoints(Checkpoints):
     Useful if you don't want checkpoints at all."""
     def create_checkpoint(self, contents_mgr, path):
         return {'id': CHECKPOINT_ID,
-                'last_modified': datetime.now()}
+                'last_modified': utcnow()}
 
     def restore_checkpoint(self, contents_mgr, checkpoint_id, path):
         pass
@@ -104,7 +103,7 @@ class HdfsCheckpoints(Checkpoints):
     def _checkpoint_model(self, checkpoint_id, hdfs_path):
         with perm_to_403(hdfs_path):
             info = self.fs.info(hdfs_path)
-        last_modified = datetime.fromtimestamp(info['last_modified'])
+        last_modified = utcfromtimestamp(info['last_modified'])
         return {'id': checkpoint_id,
                 'last_modified': last_modified}
 
