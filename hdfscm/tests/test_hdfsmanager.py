@@ -2,16 +2,16 @@ from notebook.services.contents.tests.test_manager import (
     TestContentsManager
 )
 
-from hdfscm import HdfsContentsManager, NoOpCheckpoints
+from hdfscm import HDFSContentsManager, NoOpCheckpoints
 
 from .conftest import random_root_dir
 
 
-class HdfsContentsManagerTestCase(TestContentsManager):
+class HDFSContentsManagerTestCase(TestContentsManager):
 
     def setUp(self):
         self.root_dir = random_root_dir()
-        self.contents_manager = HdfsContentsManager(root_dir=self.root_dir)
+        self.contents_manager = HDFSContentsManager(root_dir=self.root_dir)
 
     def tearDown(self):
         self.contents_manager.fs.delete(self.root_dir, recursive=True)
@@ -22,11 +22,11 @@ class HdfsContentsManagerTestCase(TestContentsManager):
             path=api_path)
 
 
-class HdfsContentsManagerNoOpCheckpointsTestCase(HdfsContentsManagerTestCase):
+class HDFSContentsManagerNoOpCheckpointsTestCase(HDFSContentsManagerTestCase):
 
     def setUp(self):
         self.root_dir = random_root_dir()
-        self.contents_manager = HdfsContentsManager(
+        self.contents_manager = HDFSContentsManager(
             root_dir=self.root_dir,
             checkpoints_class=NoOpCheckpoints
         )

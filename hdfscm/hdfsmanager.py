@@ -9,12 +9,12 @@ from pyarrow import hdfs, ArrowIOError
 from traitlets import Unicode, Integer, Bool, default
 from tornado.web import HTTPError
 
-from .checkpoints import HdfsCheckpoints
+from .checkpoints import HDFSCheckpoints
 from .utils import (to_fs_path, to_api_path, is_hidden, perm_to_403,
                     utcfromtimestamp)
 
 
-class HdfsContentsManager(ContentsManager):
+class HDFSContentsManager(ContentsManager):
     """A ContentsManager implementation that persists to HDFS."""
 
     root_dir = Unicode(
@@ -83,7 +83,7 @@ class HdfsContentsManager(ContentsManager):
         self.fs.mkdir(self.root_dir)
 
     def _checkpoints_class_default(self):
-        return HdfsCheckpoints
+        return HDFSCheckpoints
 
     def info_string(self):
         return "Serving notebooks from HDFS directory: %s" % self.root_dir

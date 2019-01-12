@@ -4,18 +4,18 @@ from notebook.services.contents.tests.test_contents_api import (
 )
 from traitlets.config import Config
 
-from hdfscm import HdfsContentsManager
+from hdfscm import HDFSContentsManager
 from hdfscm.utils import to_fs_path
 
 from .conftest import random_root_dir
 
 
-class HdfsContentsAPITest(APITest):
+class HDFSContentsAPITest(APITest):
     hidden_dirs = []
     root_dir = random_root_dir()
     config = Config()
-    config.NotebookApp.contents_manager_class = HdfsContentsManager
-    config.HdfsContentsManager.root_dir = root_dir
+    config.NotebookApp.contents_manager_class = HDFSContentsManager
+    config.HDFSContentsManager.root_dir = root_dir
 
     @classmethod
     def setUpClass(cls):

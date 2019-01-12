@@ -7,7 +7,7 @@ from pyarrow import hdfs
 from .utils import to_fs_path, perm_to_403, utcfromtimestamp, utcnow
 
 
-__all__ = ('HdfsCheckpoints', 'NoOpCheckpoints')
+__all__ = ('HDFSCheckpoints', 'NoOpCheckpoints')
 
 
 # Currently only one checkpoint is supported
@@ -35,7 +35,7 @@ class NoOpCheckpoints(Checkpoints):
         return []
 
 
-class HdfsCheckpoints(Checkpoints):
+class HDFSCheckpoints(Checkpoints):
     """A Checkpoints implementation that persists to HDFS"""
 
     checkpoint_dir = Unicode(
