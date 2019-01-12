@@ -17,5 +17,5 @@ New BSD. See the `License File`_.
 
 .. |travis| image:: https://travis-ci.org/jcrist/hdfscm.svg?branch=master
    :target: https://travis-ci.org/jcrist/hdfscm
-.. |pypi| image:: https://img.shields.io/pypi/v/jupyterhub-hdfscm.svg
-   :target: https://pypi.org/project/jupyterhub-hdfscm/
+.. |pypi| image:: https://img.shields.io/pypi/v/jupyter-hdfscm.svg
+   :target: https://pypi.org/project/jupyter-hdfscm/
