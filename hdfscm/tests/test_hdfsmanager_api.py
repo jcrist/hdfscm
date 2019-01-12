@@ -38,8 +38,8 @@ class HdfsContentsAPITest(APITest):
         super().setUp()
 
     def tearDown(self):
-        super().setUp()
-        self.delete_dir(self.root_dir)
+        super().tearDown()
+        self.fs.delete(self.root_dir, recursive=True)
 
     @property
     def fs(self):
