@@ -10,4 +10,5 @@ if [[ "$DOCS" != "true" ]]; then
     pip install git+https://github.com/jcrist/hadoop-test-cluster.git
     # Start the test cluster
     htcluster startup --image kerberos:latest --mount .:hdfscm
+    htcluster exec -- kinit testuser -kt testuser.keytab
 fi
