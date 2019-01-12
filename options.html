@@ -1,0 +1,262 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Configuration Options &#8212; hdfscm 0+untagged.20.gbed4be9 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="hdfscm" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="configuration-options">
+<h1>Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="hdfscontentsmanager">
+<h2>HDFSContentsManager<a class="headerlink" href="#hdfscontentsmanager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="hdfscm.HDFSContentsManager">
+<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">HDFSContentsManager</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSContentsManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>A ContentsManager implementation that persists to HDFS.</p>
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.allow_hidden = Bool(False)</code></dt>
+<dd><p>Allow access to hidden files</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.create_root_dir_on_startup = Bool(True)</code></dt>
+<dd><p>Create <code class="docutils literal notranslate"><span class="pre">root_dir</span></code> on startup if it doesn’t already exist</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.files_handler_class = Type(&lt;class 'notebook.files.handlers.FilesHandler'&gt;)</code></dt>
+<dd><p>handler class to use when serving raw file requests.</p>
+<p>Default is a fallback that talks to the ContentsManager API,
+which may be inefficient, especially for large files.</p>
+<p>Local files-based ContentsManagers can use a StaticFileHandler subclass,
+which will be much more efficient.</p>
+<p>Access to these files should be Authenticated.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.files_handler_params = Dict()</code></dt>
+<dd><p>Extra parameters to pass to files_handler_class.</p>
+<p>For example, StaticFileHandlers generally expect a <cite>path</cite> argument
+specifying the root directory from which to serve files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.hdfs_host = Unicode('default')</code></dt>
+<dd><p>The hostname of the HDFS namenode.</p>
+<p>By default this will be inferred from the HDFS configuration files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.hdfs_port = Int(0)</code></dt>
+<dd><p>The port for the HDFS namenode.</p>
+<p>By default this will be inferred from the HDFS configuration files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.hide_globs = List()</code></dt>
+<dd><p>Glob patterns to hide in file and directory listings.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.pre_save_hook = Any(None)</code></dt>
+<dd><p>Python callable or importstring thereof</p>
+<p>To be called on a contents model prior to save.</p>
+<p>This can be used to process the structure,
+such as removing notebook outputs or other side effects that
+should not be saved.</p>
+<p>It will be called as (all arguments passed by keyword):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hook</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">contents_manager</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>model: the model to be saved. Includes file contents.
+Modifying this dict will affect the file that is stored.</li>
+<li>path: the API path of the save destination</li>
+<li>contents_manager: this ContentsManager instance</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.root_dir = Unicode('')</code></dt>
+<dd><p>The root directory to serve from.</p>
+<p>By default this is populated by <code class="docutils literal notranslate"><span class="pre">root_dir_template</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.root_dir_template = Unicode('/user/{username}/notebooks')</code></dt>
+<dd><p>A template string to populate <code class="docutils literal notranslate"><span class="pre">root_dir</span></code> from.</p>
+<p>Receive the following format parameters:</p>
+<ul class="simple">
+<li>username</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.untitled_directory = Unicode('Untitled Folder')</code></dt>
+<dd><p>The base name used when creating untitled directories.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.untitled_file = Unicode('untitled')</code></dt>
+<dd><p>The base name used when creating untitled files.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSContentsManager.untitled_notebook = Unicode('Untitled')</code></dt>
+<dd><p>The base name used when creating untitled notebooks.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="hdfscheckpoints">
+<h2>HDFSCheckpoints<a class="headerlink" href="#hdfscheckpoints" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="hdfscm.HDFSCheckpoints">
+<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">HDFSCheckpoints</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSCheckpoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Checkpoints implementation that persists to HDFS</p>
+<dl class="attribute">
+<dt>
+<code class="descname">config c.HDFSCheckpoints.checkpoint_dir = Unicode('.ipynb_checkpoints')</code></dt>
+<dd><p>The directory name in which to keep file checkpoints</p>
+<p>This is a path relative to the file’s own directory.</p>
+<p>By default, it is .ipynb_checkpoints</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="noopcheckpoints">
+<h2>NoOpCheckpoints<a class="headerlink" href="#noopcheckpoints" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="hdfscm.NoOpCheckpoints">
+<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">NoOpCheckpoints</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.NoOpCheckpoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Checkpoints implementation that does nothing.</p>
+<p>Useful if you don’t want checkpoints at all.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">hdfscm</a></h1>
+
+
+
+<p class="blurb">A Jupyter ContentsManager for storing content on HDFS</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=jcrist&repo=hdfscm&type=watch&count=False&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+    
+
+<p>
+<a class="badge" href="https://travis-ci.org/jcrist/hdfscm">
+    <img
+        alt="https://secure.travis-ci.org/jcrist/hdfscm.svg?branch=master"
+        src="https://secure.travis-ci.org/jcrist/hdfscm.svg?branch=master"
+    />
+</a>
+</p>
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#hdfscontentsmanager">HDFSContentsManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hdfscheckpoints">HDFSCheckpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#noopcheckpoints">NoOpCheckpoints</a></li>
+</ul>
+</li>
+</ul>
+
+<h3>Need help?</h3>
+
+<p>
+  Open an issue in the <a href="https://github.com/jcrist/skein/issues">issue tracker</a>.
+</p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Jim Crist.
+      
+      |
+      <a href="_sources/options.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
