@@ -19,13 +19,11 @@ _UTC = _utc_tzinfo()
 
 
 def utcfromtimestamp(t):
-    out = datetime.utcfromtimestamp(t)
-    return out.replace(tzinfo=_UTC)
+    return datetime.utcfromtimestamp(t).replace(tzinfo=_UTC)
 
 
 def utcnow():
-    out = datetime.now()
-    return out.replace(tzinfo=_UTC)
+    return datetime.now().replace(tzinfo=_UTC)
 
 
 def to_api_path(fs_path, root):

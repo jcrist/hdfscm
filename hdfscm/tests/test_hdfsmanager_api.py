@@ -10,28 +10,31 @@ from hdfscm.utils import to_fs_path
 from .conftest import random_root_dir
 
 
-def bind_sockets_patched(port, address, *args, **kwargs):
-    import socket
-    try:
-        has_ipv6 = socket.has_ipv6
-        socket.has_ipv6 = False
-        return _orig_bind_sockets(port, address, *args, **kwargs)
-    finally:
-        socket.has_ipv6 = has_ipv6
-
-
-import tornado.netutil
-import tornado.tcpserver
-_orig_bind_sockets = tornado.netutil.bind_sockets
-tornado.tcpserver.bind_sockets = bind_sockets_patched
-
-
 class HdfsContentsAPITest(APITest):
     hidden_dirs = []
     root_dir = random_root_dir()
     config = Config()
     config.NotebookApp.contents_manager_class = HdfsContentsManager
     config.HdfsContentsManager.root_dir = root_dir
+
+    @classmethod
+    def setUpClass(cls):
+        """Due to https://github.com/docker/for-linux/issues/250, tornado maps
+        localhost to an unresolvable ipv6 address. The easiest way to workaround
+        this is to make it look like python was built without ipv6 support. This
+        patch could fail if `tornado.netutils.bind_sockets` is updated. Note
+        that this doesn't indicate a problem with real world use."""
+        import socket
+        cls._has_ipv6 = socket.has_ipv6
+        socket.has_ipv6 = False
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        """See setUpClass above"""
+        import socket
+        socket.has_ipv6 = cls._has_ipv6
+        super().tearDownClass()
 
     def setUp(self):
         self.notebook.contents_manager.ensure_root_directory()
