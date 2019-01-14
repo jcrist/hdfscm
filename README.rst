@@ -1,7 +1,7 @@
 hdfscm
 ======
 
-|travis| |pypi|
+|travis| |pypi| |conda|
 
 A Jupyter ContentsManager_ for HDFS. See `the documentation`_ for more
 information.
@@ -19,3 +19,5 @@ New BSD. See the `License File`_.
    :target: https://travis-ci.org/jcrist/hdfscm
 .. |pypi| image:: https://img.shields.io/pypi/v/jupyter-hdfscm.svg
    :target: https://pypi.org/project/jupyter-hdfscm/
+.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/jupyter-hdfscm.svg
+   :target: https://anaconda.org/conda-forge/jupyter-hdfscm

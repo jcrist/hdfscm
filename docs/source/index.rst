@@ -8,6 +8,12 @@ HDFS.
 Installation
 ------------
 
+**Install with Conda:**
+
+.. code::
+
+    conda install -c conda-forge jupyter-hdfscm
+
 **Install with Pip:**
 
 .. code::
