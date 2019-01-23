@@ -1,6 +1,9 @@
 Configuration Options
 =====================
 
+.. contents:: :local:
+
+
 HDFSContentsManager
 -------------------
 
