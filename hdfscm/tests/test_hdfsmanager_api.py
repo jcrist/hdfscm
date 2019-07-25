@@ -18,7 +18,7 @@ class HDFSContentsAPITest(APITest):
     config.HDFSContentsManager.root_dir = root_dir
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         """Due to https://github.com/docker/for-linux/issues/250, tornado maps
         localhost to an unresolvable ipv6 address. The easiest way to workaround
         this is to make it look like python was built without ipv6 support. This
@@ -27,14 +27,15 @@ class HDFSContentsAPITest(APITest):
         import socket
         cls._has_ipv6 = socket.has_ipv6
         socket.has_ipv6 = False
-        super().setUpClass()
+        super().setup_class()
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         """See setUpClass above"""
         import socket
         socket.has_ipv6 = cls._has_ipv6
-        super().tearDownClass()
+        cls.notebook.contents_manager.fs.close()
+        super().teardown_class()
 
     def setUp(self):
         self.notebook.contents_manager.ensure_root_directory()

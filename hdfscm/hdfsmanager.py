@@ -126,7 +126,7 @@ class HDFSContentsManager(ContentsManager):
 
     def _model_from_info(self, info, type=None):
         if 'name' in info:
-            hdfs_path = info['name']
+            hdfs_path = urlsplit(info['name']).path
             timestamp = info['last_modified_time']
         else:
             # info from `ls` is different for some reason
