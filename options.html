@@ -1,12 +1,10 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Configuration Options &#8212; hdfscm 0.1.1+3.g15e8f76 documentation</title>
+    <meta charset="utf-8" />
+    <title>Configuration Options &#8212; hdfscm 0.1.1+4.g427e8c8 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -37,32 +35,32 @@
 <h1>Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h1>
 <div class="contents local topic" id="contents">
 <ul class="simple">
-<li><a class="reference internal" href="#hdfscontentsmanager" id="id1">HDFSContentsManager</a></li>
-<li><a class="reference internal" href="#hdfscheckpoints" id="id2">HDFSCheckpoints</a></li>
-<li><a class="reference internal" href="#noopcheckpoints" id="id3">NoOpCheckpoints</a></li>
+<li><p><a class="reference internal" href="#hdfscontentsmanager" id="id1">HDFSContentsManager</a></p></li>
+<li><p><a class="reference internal" href="#hdfscheckpoints" id="id2">HDFSCheckpoints</a></p></li>
+<li><p><a class="reference internal" href="#noopcheckpoints" id="id3">NoOpCheckpoints</a></p></li>
 </ul>
 </div>
 <div class="section" id="hdfscontentsmanager">
 <h2><a class="toc-backref" href="#id1">HDFSContentsManager</a><a class="headerlink" href="#hdfscontentsmanager" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="hdfscm.HDFSContentsManager">
-<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">HDFSContentsManager</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSContentsManager" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">hdfscm.</code><code class="sig-name descname">HDFSContentsManager</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSContentsManager" title="Permalink to this definition">¶</a></dt>
 <dd><p>A ContentsManager implementation that persists to HDFS.</p>
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.allow_hidden = Bool(False)</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.allow_hidden = Bool(False)</code></dt>
 <dd><p>Allow access to hidden files</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.create_root_dir_on_startup = Bool(True)</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.create_root_dir_on_startup = Bool(True)</code></dt>
 <dd><p>Create <code class="docutils literal notranslate"><span class="pre">root_dir</span></code> on startup if it doesn’t already exist</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.files_handler_class = Type(&lt;class 'notebook.files.handlers.FilesHandler'&gt;)</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.files_handler_class = Type(&lt;class 'notebook.files.handlers.FilesHandler'&gt;)</code></dt>
 <dd><p>handler class to use when serving raw file requests.</p>
 <p>Default is a fallback that talks to the ContentsManager API,
 which may be inefficient, especially for large files.</p>
@@ -73,7 +71,7 @@ which will be much more efficient.</p>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.files_handler_params = Dict()</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.files_handler_params = Dict()</code></dt>
 <dd><p>Extra parameters to pass to files_handler_class.</p>
 <p>For example, StaticFileHandlers generally expect a <cite>path</cite> argument
 specifying the root directory from which to serve files.</p>
@@ -81,27 +79,27 @@ specifying the root directory from which to serve files.</p>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.hdfs_host = Unicode('default')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.hdfs_host = Unicode('default')</code></dt>
 <dd><p>The hostname of the HDFS namenode.</p>
 <p>By default this will be inferred from the HDFS configuration files.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.hdfs_port = Int(0)</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.hdfs_port = Int(0)</code></dt>
 <dd><p>The port for the HDFS namenode.</p>
 <p>By default this will be inferred from the HDFS configuration files.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.hide_globs = List()</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.hide_globs = List()</code></dt>
 <dd><p>Glob patterns to hide in file and directory listings.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.pre_save_hook = Any(None)</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.pre_save_hook = Any(None)</code></dt>
 <dd><p>Python callable or importstring thereof</p>
 <p>To be called on a contents model prior to save.</p>
 <p>This can be used to process the structure,
@@ -112,45 +110,45 @@ should not be saved.</p>
 </pre></div>
 </div>
 <ul class="simple">
-<li>model: the model to be saved. Includes file contents.
-Modifying this dict will affect the file that is stored.</li>
-<li>path: the API path of the save destination</li>
-<li>contents_manager: this ContentsManager instance</li>
+<li><p>model: the model to be saved. Includes file contents.
+Modifying this dict will affect the file that is stored.</p></li>
+<li><p>path: the API path of the save destination</p></li>
+<li><p>contents_manager: this ContentsManager instance</p></li>
 </ul>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.root_dir = Unicode('')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.root_dir = Unicode('')</code></dt>
 <dd><p>The root directory to serve from.</p>
 <p>By default this is populated by <code class="docutils literal notranslate"><span class="pre">root_dir_template</span></code>.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.root_dir_template = Unicode('/user/{username}/notebooks')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.root_dir_template = Unicode('/user/{username}/notebooks')</code></dt>
 <dd><p>A template string to populate <code class="docutils literal notranslate"><span class="pre">root_dir</span></code> from.</p>
 <p>Receive the following format parameters:</p>
 <ul class="simple">
-<li>username</li>
+<li><p>username</p></li>
 </ul>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.untitled_directory = Unicode('Untitled Folder')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.untitled_directory = Unicode('Untitled Folder')</code></dt>
 <dd><p>The base name used when creating untitled directories.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.untitled_file = Unicode('untitled')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.untitled_file = Unicode('untitled')</code></dt>
 <dd><p>The base name used when creating untitled files.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSContentsManager.untitled_notebook = Unicode('Untitled')</code></dt>
+<code class="sig-name descname">config c.HDFSContentsManager.untitled_notebook = Unicode('Untitled')</code></dt>
 <dd><p>The base name used when creating untitled notebooks.</p>
 </dd></dl>
 
@@ -161,11 +159,11 @@ Modifying this dict will affect the file that is stored.</li>
 <h2><a class="toc-backref" href="#id2">HDFSCheckpoints</a><a class="headerlink" href="#hdfscheckpoints" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="hdfscm.HDFSCheckpoints">
-<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">HDFSCheckpoints</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSCheckpoints" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">hdfscm.</code><code class="sig-name descname">HDFSCheckpoints</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.HDFSCheckpoints" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Checkpoints implementation that persists to HDFS</p>
 <dl class="attribute">
 <dt>
-<code class="descname">config c.HDFSCheckpoints.checkpoint_dir = Unicode('.ipynb_checkpoints')</code></dt>
+<code class="sig-name descname">config c.HDFSCheckpoints.checkpoint_dir = Unicode('.ipynb_checkpoints')</code></dt>
 <dd><p>The directory name in which to keep file checkpoints</p>
 <p>This is a path relative to the file’s own directory.</p>
 <p>By default, it is .ipynb_checkpoints</p>
@@ -178,7 +176,7 @@ Modifying this dict will affect the file that is stored.</li>
 <h2><a class="toc-backref" href="#id3">NoOpCheckpoints</a><a class="headerlink" href="#noopcheckpoints" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="hdfscm.NoOpCheckpoints">
-<em class="property">class </em><code class="descclassname">hdfscm.</code><code class="descname">NoOpCheckpoints</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.NoOpCheckpoints" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">hdfscm.</code><code class="sig-name descname">NoOpCheckpoints</code><span class="sig-paren">(</span><em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#hdfscm.NoOpCheckpoints" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Checkpoints implementation that does nothing.</p>
 <p>Useful if you don’t want checkpoints at all.</p>
 </dd></dl>
@@ -239,13 +237,11 @@ Modifying this dict will affect the file that is stored.</li>
   Open an issue in the <a href="https://github.com/jcrist/hdfscm/issues">issue tracker</a>.
 </p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
       <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
     </form>
     </div>
 </div>
