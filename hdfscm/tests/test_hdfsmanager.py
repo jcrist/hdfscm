@@ -15,6 +15,7 @@ class HDFSContentsManagerTestCase(TestContentsManager):
 
     def tearDown(self):
         self.contents_manager.fs.delete(self.root_dir, recursive=True)
+        self.contents_manager.fs.close()
 
     def make_dir(self, api_path):
         self.contents_manager.new(
@@ -30,6 +31,9 @@ class HDFSContentsManagerNoOpCheckpointsTestCase(HDFSContentsManagerTestCase):
             root_dir=self.root_dir,
             checkpoints_class=NoOpCheckpoints
         )
+
+    def tearDown(self):
+        self.contents_manager.fs.close()
 
 
 del TestContentsManager
