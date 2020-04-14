@@ -167,11 +167,17 @@ class HDFSContentsManager(ContentsManager):
             with perm_to_403(path):
                 records = self.fs.ls(hdfs_path, True)
             contents = [self._model_from_info(i) for i in records]
-            # Filter out hidden files/directories
-            # These are rare, so do this after generating contents, not before
-            model['content'] = [c for c in contents
-                                if self.should_list(c['name']) and not
-                                c['name'].startswith('.')]
+
+            def should_list(c):
+                child_path = c['name']
+                if self.should_list(child_path):
+                    if self.allow_hidden and is_hidden(child_path, path):
+                        return True
+                    if not is_hidden(child_path, path):
+                        return True
+                return False
+
+            model['content'] = [c for c in contents if should_list(c)]
             model['format'] = 'json'
         return model
 
