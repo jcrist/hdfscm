@@ -46,7 +46,7 @@ def to_fs_path(path, root):
 
 def is_hidden(fs_path, root):
     path = to_api_path(fs_path, root)
-    return any(part.startswith('.') for part in path.split("/"))
+    return any(part.startswith('.') or part.startswith('_') for part in path.split("/"))
 
 
 @contextmanager
