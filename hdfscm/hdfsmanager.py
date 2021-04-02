@@ -272,6 +272,7 @@ class HDFSContentsManager(ContentsManager):
     def _save_file(self, path, hdfs_path, model):
         format = model['format']
         content = model['content']
+        chunk = model.get('chunk', None)
 
         if format not in {'text', 'base64'}:
             raise HTTPError(
@@ -287,10 +288,15 @@ class HDFSContentsManager(ContentsManager):
         except Exception as e:
             raise HTTPError(400, 'Encoding error saving %s: %s' % (path, e))
 
-        self.log.debug("Saving file to %s", hdfs_path)
         with perm_to_403(path):
-            with self.fs.open(hdfs_path, 'wb') as f:
-                f.write(bcontent)
+            if chunk is None or chunk == 1:
+                self.log.debug("Saving file to %s", hdfs_path)
+                with self.fs.open(hdfs_path, 'wb') as f:
+                    f.write(bcontent)
+            else:
+                self.log.debug("Appending file to %s", hdfs_path)
+                with self.fs.open(hdfs_path, 'ab') as f:
+                    f.write(bcontent)
 
     def _save_notebook(self, path, hdfs_path, model):
         nb = nbformat.from_dict(model['content'])
